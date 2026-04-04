@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Datasets — too large for git (18GB+), download separately
+Datasets/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Environment secrets
+.env
+backend/.env
+ml-service/.env
+
+# Python
+ml-service/.venv/
+__pycache__/
+*.pyc
+*.pyo
+.Python
+
+# ML model weights (regenerated via train.py)
+ml-service/weights/
+
+# Expo / React Native
+frontend/.expo/
+frontend/dist/
+frontend/.metro-health-check*
+
+# Docker volumes
+backend/postgres_data/

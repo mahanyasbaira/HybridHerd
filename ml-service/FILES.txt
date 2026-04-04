@@ -1,0 +1,127 @@
+================================================================================
+HYBRIDHERD BRD ML SERVICE - COMPLETE FILE LISTING
+================================================================================
+
+PROJECT ROOT: /Volumes/Me Things/Claude_code/HybridHerd/ml-service/
+
+PYTHON MODULES (11 files, 1,373 lines)
+================================================================================
+
+loaders/
+  __init__.py                     Module exports
+  mmcows_loader.py                MmCows sensor data loader
+    - load_cbt()                  Load core body temperature
+    - load_thi()                  Load Temperature-Humidity Index
+    - load_ankle_activity()       Load accelerometer data
+    - compute_daily_features()    Daily aggregation
+  malga_loader.py                 Malga heart rate baseline
+    - generate_synthetic_baseline()  Generate realistic HR data
+    - load()                      Load from file or synthetic
+
+models/
+  __init__.py                     Module exports
+  feature_engineer.py             Feature engineering
+    - build_features_from_simulated()  Generate synthetic training data
+    - build_features_from_db()    Query database for real data
+  brd_classifier.py               ML classifier
+    - train()                     Train HistGradientBoosting
+    - load()                      Load model from disk
+    - predict()                   Run inference
+    - train_and_save()            Classmethod convenience
+
+api/
+  __init__.py                     Module initialization
+  main.py                         FastAPI REST service
+    - GET /health                 Health check
+    - POST /predict               Predict from features
+    - POST /predict-from-db       Predict from database
+    - POST /retrain               Retrain model
+    - startup_event()             Auto-train on startup
+  startup.py                      Startup initialization
+    - auto_train_if_needed()      Check model, auto-train if missing
+    - is_model_ready()            Model status
+    - get_model_error()           Last error message
+
+train.py                          Standalone training script
+test_integration.py               Integration tests
+  - test_feature_engineer()
+  - test_classifier()
+  - test_mmcows_loader()
+  - test_malga_loader()
+
+CONFIGURATION FILES (4 files)
+================================================================================
+
+requirements.txt                  Python dependencies
+  - fastapi>=0.110.0
+  - uvicorn>=0.29.0
+  - scikit-learn>=1.4.0
+  - pandas>=2.2.0
+  - numpy>=1.26.0
+  - joblib>=1.3.0
+  - psycopg2-binary>=2.9.9
+  - python-dotenv>=1.0.0
+
+.env.example                      Environment configuration template
+  - DATABASE_URL
+  - MODEL_PATH
+  - PORT
+
+DOCUMENTATION FILES (3 files)
+================================================================================
+
+README.md                         Complete usage guide
+  - Installation
+  - Configuration
+  - Training
+  - Running API
+  - API endpoints with examples
+  - Data sources
+  - Features and labels
+  - Model details
+  - Development notes
+
+BUILD_MANIFEST.md                 Detailed build checklist
+  - Implementation status
+  - Testing summary
+  - Usage examples
+  - Data integration points
+
+FILES.txt                         This file
+
+QUICK REFERENCE
+================================================================================
+
+TOTAL FILES: 15
+TOTAL PYTHON LINES: 1,373
+SYNTAX STATUS: ALL PASS ✓
+
+KEY CLASSES
+  - MmCowsLoader         (loaders/mmcows_loader.py)
+  - MalgaLoader          (loaders/malga_loader.py)
+  - FeatureEngineer      (models/feature_engineer.py)
+  - BRDClassifier        (models/brd_classifier.py)
+  - FastAPI app          (api/main.py)
+
+ENDPOINTS
+  - GET  /health
+  - POST /predict
+  - POST /predict-from-db
+  - POST /retrain
+
+ENVIRONMENT VARIABLES
+  - DATABASE_URL         (optional, for /predict-from-db)
+  - MODEL_PATH           (default: weights/brd_model.joblib)
+  - PORT                 (default: 8000)
+
+MAIN ENTRY POINTS
+  - train.py                      python3 train.py
+  - api/main.py                   python3 -m uvicorn api.main:app ...
+  - test_integration.py           python3 test_integration.py
+
+DATA SOURCES
+  - MmCows: /Volumes/Me Things/Claude_code/HybridHerd/Datasets/sensor_data/
+  - Malga:  Zenodo record (optional)
+  - DB:     PostgreSQL via DATABASE_URL env
+
+================================================================================
