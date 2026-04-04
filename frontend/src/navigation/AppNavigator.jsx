@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -23,17 +24,14 @@ const HerdStack = () => (
   </Stack.Navigator>
 );
 
-const AlertsBadge = () => {
+const AppNavigator = () => {
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts'],
     queryFn: fetchAlerts,
     refetchInterval: 30000,
   });
+  const alertCount = alerts.length > 0 ? alerts.length : undefined;
 
-  return alerts.length > 0 ? alerts.length : null;
-};
-
-const AppNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -70,7 +68,7 @@ const AppNavigator = () => {
           tabBarIcon: ({ color }) => (
             <Text style={{ fontSize: 24 }}>🔔</Text>
           ),
-          tabBarBadge: <AlertsBadge />,
+          tabBarBadge: alertCount,
         }}
       />
       <Tab.Screen
