@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { sendToVet } from '../utils/api';
 
-const SendToVetButton = ({ alertId, animalName, onSent }) => {
+const SendToVetButton = ({ alertId, animalName, onSent, onAiBriefing }) => {
   const [loading, setLoading] = useState(false);
 
   const handlePress = () => {
@@ -32,8 +32,11 @@ const SendToVetButton = ({ alertId, animalName, onSent }) => {
 
             setLoading(true);
             try {
-              await sendToVet(alertId, note.trim());
+              const response = await sendToVet(alertId, note.trim());
               Alert.alert('Success', 'Alert sent to veterinarian.');
+              if (response.ai_briefing && onAiBriefing) {
+                onAiBriefing(response.ai_briefing);
+              }
               onSent();
             } catch (error) {
               Alert.alert('Error', 'Failed to send alert. Please try again.');

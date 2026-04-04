@@ -65,3 +65,13 @@ CREATE TABLE telehealth_actions (
   status           VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending','sent_to_vet','vet_responded','closed')),
   created_at       TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Users for authentication
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) DEFAULT 'rancher' CHECK (role IN ('rancher','vet','admin')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);

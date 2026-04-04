@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { fetchAnimal } from '../utils/api';
 
 const CowDetailScreen = ({ route, navigation }) => {
   const { animal_id } = route.params;
+  const [aiBriefing, setAiBriefing] = useState(null);
 
   const {
     data: animal,
@@ -27,6 +28,10 @@ const CowDetailScreen = ({ route, navigation }) => {
 
   const handleSent = () => {
     refetch();
+  };
+
+  const handleAiBriefing = (briefing) => {
+    setAiBriefing(briefing);
   };
 
   const styles = StyleSheet.create({
@@ -78,6 +83,24 @@ const CowDetailScreen = ({ route, navigation }) => {
     errorText: {
       fontSize: 22,
       color: '#dc2626',
+    },
+    briefingBox: {
+      backgroundColor: '#dbeafe',
+      borderRadius: 6,
+      padding: 12,
+      marginHorizontal: 16,
+      marginVertical: 12,
+    },
+    briefingLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#0c4a6e',
+      marginBottom: 8,
+    },
+    briefingText: {
+      fontSize: 13,
+      color: '#6b7280',
+      lineHeight: 18,
     },
   });
 
@@ -177,11 +200,20 @@ const CowDetailScreen = ({ route, navigation }) => {
         </View>
 
         {showSendToVet && (
-          <SendToVetButton
-            alertId={animal.latest_alert_id}
-            animalName={animal.name}
-            onSent={handleSent}
-          />
+          <>
+            <SendToVetButton
+              alertId={animal.latest_alert_id}
+              animalName={animal.name}
+              onSent={handleSent}
+              onAiBriefing={handleAiBriefing}
+            />
+            {aiBriefing && (
+              <View style={styles.briefingBox}>
+                <Text style={styles.briefingLabel}>AI Vet Briefing:</Text>
+                <Text style={styles.briefingText}>{aiBriefing}</Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>

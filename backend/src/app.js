@@ -3,6 +3,7 @@ const { createHandler } = require('graphql-http/lib/use/express');
 const schema = require('./graphql/schema');
 const resolvers = require('./graphql/resolvers');
 
+const authRoutes = require('./routes/auth');
 const telemetryRoutes = require('./routes/telemetry');
 const animalRoutes = require('./routes/animals');
 const alertRoutes = require('./routes/alerts');
@@ -14,6 +15,7 @@ const app = express();
 app.use(express.json());
 
 // REST Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/telemetry', telemetryRoutes);
 app.use('/api/animals', animalRoutes);
 app.use('/api/alerts', alertRoutes);

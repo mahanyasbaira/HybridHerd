@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, View, ActivityIndicator } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -8,7 +8,9 @@ import DashboardScreen from '../screens/DashboardScreen';
 import CowDetailScreen from '../screens/CowDetailScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import LoginScreen from '../screens/LoginScreen';
 import { fetchAlerts } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -25,6 +27,20 @@ const HerdStack = () => (
 );
 
 const AppNavigator = () => {
+  const { token, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#16a34a" />
+      </View>
+    );
+  }
+
+  if (!token) {
+    return <LoginScreen />;
+  }
+
   const { data: alerts = [] } = useQuery({
     queryKey: ['alerts'],
     queryFn: fetchAlerts,

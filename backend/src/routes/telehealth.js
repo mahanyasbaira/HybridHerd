@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db/pool');
 const { authenticateToken } = require('../middleware/auth');
 const { buildNotificationPayload } = require('../services/alertService');
+const { generateVetBriefing } = require('../services/geminiService');
 
 const router = express.Router();
 
@@ -43,8 +44,29 @@ router.post('/', authenticateToken, async (req, res) => {
     // Build full notification payload
     const payload = await buildNotificationPayload(alert, pool);
 
+    // Fetch breed for AI briefing
+    const animalResult = await pool.query(
+      'SELECT breed FROM animals WHERE id = $1',
+      [alert.animal_id]
+    );
+    const breed = animalResult.rows[0]?.breed || 'Unknown';
+
+    const ts = payload.telemetry_summary;
+    const ai_briefing = await generateVetBriefing({
+      animal: { ...payload.animal, breed },
+      riskLevel: payload.risk_level,
+      telemetrySummary: {
+        avgTemp: ts.nose_ring.avg_24h_temp ?? ts.nose_ring.latest_temp_c ?? 0,
+        avgRespRate: ts.nose_ring.latest_respiratory_rate ?? 0,
+        avgChewFreq: ts.collar.latest_chew_frequency ?? 0,
+        totalCoughs: ts.collar.latest_cough_count ?? 0,
+        avgBehaviorIndex: ts.ear_tag.latest_behavior_index ?? 0,
+      },
+      rancherNote: rancher_note,
+    });
+
     res.status(201).json({
-      telehealth_action: result.rows[0],
+      telehealth_action: { ...result.rows[0], ai_briefing },
       notification_payload: payload,
     });
   } catch (err) {

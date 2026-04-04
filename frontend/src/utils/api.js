@@ -72,3 +72,13 @@ export async function respondToTelehealth(id, vetNote, vetAction) {
     throw error;
   }
 }
+
+export async function loginUser(email, password) {
+  const response = await api.post('/api/auth/login', { email, password });
+  return response.data;
+}
+
+export async function registerUser(name, email, password) {
+  const response = await api.post('/api/auth/register', { name, email, password });
+  return response.data;
+}
