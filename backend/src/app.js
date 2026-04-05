@@ -9,6 +9,7 @@ const animalRoutes = require('./routes/animals');
 const alertRoutes = require('./routes/alerts');
 const telehealthRoutes = require('./routes/telehealth');
 const notesRoutes = require('./routes/notes');
+const consultationsRoutes = require('./routes/consultations');
 
 const cors = require('cors');
 
@@ -25,6 +26,7 @@ app.use('/api/animals', animalRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/telehealth', telehealthRoutes);
 app.use('/api/notes', notesRoutes);
+app.use('/api/consultations', consultationsRoutes);
 
 // GraphQL Endpoint
 app.use('/graphql', createHandler({ schema, rootValue: resolvers }));

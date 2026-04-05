@@ -12,6 +12,7 @@ import { AlertsPage } from './pages/AlertsPage';
 import { AddAnimalPage } from './pages/AddAnimalPage';
 import { AnimalsPage } from './pages/AnimalsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ConsultationsPage } from './pages/ConsultationsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +57,7 @@ function AppRoutes() {
         <Route path="animals/add" element={<AddAnimalPage />} />
         <Route path="animals/:id" element={<AnimalDetailPage />} />
         <Route path="alerts" element={<AlertsPage />} />
+        <Route path="consultations" element={<ConsultationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

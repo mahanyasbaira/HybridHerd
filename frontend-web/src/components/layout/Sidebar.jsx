@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, AlertCircle, LogOut, Tag, Settings, Sun, Moon, X } from 'lucide-react';
+import { LayoutDashboard, AlertCircle, LogOut, Tag, Settings, Sun, Moon, X, CalendarClock } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -18,6 +18,7 @@ export function Sidebar({ unreadAlerts, isOpen, onClose }) {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/animals', label: 'Animals', icon: Tag },
     { path: '/alerts', label: 'Alerts', icon: AlertCircle, badge: unreadAlerts },
+    { path: '/consultations', label: 'Consultations', icon: CalendarClock },
     { path: '/settings', label: 'Settings', icon: Settings },
   ];
 

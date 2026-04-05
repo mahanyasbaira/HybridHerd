@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Flag, Trash2, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Flag, Trash2, CalendarPlus, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -9,13 +9,13 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { getAnimalById, toggleAnimalFlag, deleteAnimal } from '../api/animals';
-import { getNotes, createNote, updateNote, deleteNote, sendToVet } from '../api/notes';
+import { getNotes, createNote, updateNote, deleteNote } from '../api/notes';
 import { GlassCard } from '../components/ui/GlassCard';
 import { RiskBadge } from '../components/ui/RiskBadge';
+import { ConsultationModal } from '../components/ui/ConsultationModal';
 import { toast } from 'sonner';
 
 export function AnimalDetailPage() {
@@ -24,9 +24,7 @@ export function AnimalDetailPage() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState('temperature');
-  const [showVetModal, setShowVetModal] = useState(false);
-  const [vetNotes, setVetNotes] = useState('');
-  const [vetLoading, setVetLoading] = useState(false);
+  const [showConsultModal, setShowConsultModal] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingNoteText, setEditingNoteText] = useState('');
@@ -81,15 +79,6 @@ export function AnimalDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['notes', id]);
       toast.success('Note deleted');
-    },
-  });
-
-  const sendToVetMutation = useMutation({
-    mutationFn: () => sendToVet(animal?.data?.latest_alert_id, vetNotes),
-    onSuccess: () => {
-      toast.success('Sent to veterinarian');
-      setShowVetModal(false);
-      setVetNotes('');
     },
   });
 
@@ -197,7 +186,7 @@ export function AnimalDetailPage() {
           {/* High Risk Alert Banner */}
           {animalData?.current_risk === 'High' && animalData?.latest_alert && (
             <GlassCard className="p-6 border-red-500/50 bg-red-50 dark:bg-red-500/10">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <h3 className="text-lg font-bold text-red-600 dark:text-red-300 mb-2">Active High Risk Alert</h3>
                   <p className="text-sm text-red-700 dark:text-red-200 mb-3">
@@ -208,45 +197,22 @@ export function AnimalDetailPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowVetModal(true)}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 whitespace-nowrap"
+                  onClick={() => setShowConsultModal(true)}
+                  className="px-5 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors flex items-center gap-2 whitespace-nowrap font-semibold text-sm"
                 >
-                  <Send size={16} />
-                  Send to Vet
+                  <CalendarPlus size={16} />
+                  Schedule Vet Consultation
                 </button>
               </div>
             </GlassCard>
           )}
 
-          {/* Vet Modal */}
-          {showVetModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <GlassCard className="max-w-md w-full p-6">
-                <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-4">Send to Veterinarian</h3>
-                <textarea
-                  value={vetNotes}
-                  onChange={(e) => setVetNotes(e.target.value)}
-                  placeholder="Additional notes for the vet..."
-                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm mb-4 focus:border-teal-500 outline-none"
-                  rows={4}
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowVetModal(false)}
-                    className="flex-1 px-4 py-2 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white rounded-lg hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => sendToVetMutation.mutate()}
-                    disabled={vetLoading}
-                    className="flex-1 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50"
-                  >
-                    Send
-                  </button>
-                </div>
-              </GlassCard>
-            </div>
+          {/* Consultation Modal */}
+          {showConsultModal && (
+            <ConsultationModal
+              animal={{ id: Number(id), name: animalData?.name, tag_id: animalData?.tag_id }}
+              onClose={() => setShowConsultModal(false)}
+            />
           )}
 
           {/* Sensor Cards */}
