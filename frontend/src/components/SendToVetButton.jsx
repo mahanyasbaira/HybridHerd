@@ -57,20 +57,27 @@ const SendToVetButton = ({ alertId, animalName, onSent, onAiBriefing }) => {
       backgroundColor: '#dc2626',
       paddingVertical: 18,
       paddingHorizontal: 16,
-      borderRadius: 8,
+      borderRadius: 14,
       marginHorizontal: 16,
-      marginVertical: 16,
+      marginTop: 4,
+      marginBottom: 8,
       minHeight: 60,
       justifyContent: 'center',
       alignItems: 'center',
+      shadowColor: '#dc2626',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
     },
     buttonPressed: {
-      opacity: 0.9,
+      opacity: 0.85,
     },
     text: {
       color: '#ffffff',
-      fontSize: 20,
+      fontSize: 19,
       fontWeight: '700',
+      letterSpacing: 0.3,
     },
     loadingContainer: {
       flexDirection: 'row',
@@ -95,7 +102,7 @@ const SendToVetButton = ({ alertId, animalName, onSent, onAiBriefing }) => {
           <Text style={[styles.text, { marginLeft: 8 }]}>Sending...</Text>
         </View>
       ) : (
-        <Text style={styles.text}>Send to Vet</Text>
+        <Text style={styles.text}>📋 Send to Veterinarian</Text>
       )}
     </Pressable>
   );

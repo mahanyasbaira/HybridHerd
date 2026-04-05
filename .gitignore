@@ -30,3 +30,7 @@ frontend/.metro-health-check*
 
 # Docker volumes
 backend/postgres_data/
+
+# Web frontend build artifacts
+frontend-web/node_modules/
+frontend-web/dist/

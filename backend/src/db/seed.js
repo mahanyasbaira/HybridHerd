@@ -19,20 +19,54 @@ const animals = [
 ];
 
 function getTelemetryValues(risk) {
-  const isHighRisk = risk === 'High';
+  if (risk === 'High') {
+    return {
+      nose_ring: {
+        temperature_c: 39.8 + (Math.random() - 0.5) * 0.8,
+        respiratory_rate: 48 + (Math.random() - 0.5) * 16,
+      },
+      collar: {
+        chew_frequency: 30 + (Math.random() - 0.5) * 20,
+        cough_count: Math.floor(8 + (Math.random() - 0.5) * 8),
+        activity_index: 35 + (Math.random() - 0.5) * 30,
+      },
+      ear_tag: {
+        behavior_index: 35 + (Math.random() - 0.5) * 20,
+        rumination_minutes: 200 + (Math.random() - 0.5) * 120,
+      },
+    };
+  }
+  if (risk === 'Medium') {
+    return {
+      nose_ring: {
+        temperature_c: 39.2 + (Math.random() - 0.5) * 0.4,
+        respiratory_rate: 38 + (Math.random() - 0.5) * 8,
+      },
+      collar: {
+        chew_frequency: 48 + (Math.random() - 0.5) * 16,
+        cough_count: Math.floor(4 + (Math.random() - 0.5) * 4),
+        activity_index: 52 + (Math.random() - 0.5) * 20,
+      },
+      ear_tag: {
+        behavior_index: 52 + (Math.random() - 0.5) * 10,
+        rumination_minutes: 330 + (Math.random() - 0.5) * 80,
+      },
+    };
+  }
+  // Low
   return {
     nose_ring: {
-      temperature_c: isHighRisk ? 39.8 + (Math.random() - 0.5) * 0.8 : 38.5 + (Math.random() - 0.5) * 0.6,
-      respiratory_rate: isHighRisk ? 48 + (Math.random() - 0.5) * 16 : 26 + (Math.random() - 0.5) * 8,
+      temperature_c: 38.5 + (Math.random() - 0.5) * 0.6,
+      respiratory_rate: 26 + (Math.random() - 0.5) * 8,
     },
     collar: {
-      chew_frequency: isHighRisk ? 30 + (Math.random() - 0.5) * 20 : 65 + (Math.random() - 0.5) * 20,
-      cough_count: isHighRisk ? Math.floor(8 + (Math.random() - 0.5) * 8) : Math.floor(1 + (Math.random() - 0.5) * 2),
-      activity_index: isHighRisk ? 35 + (Math.random() - 0.5) * 30 : 70 + (Math.random() - 0.5) * 30,
+      chew_frequency: 65 + (Math.random() - 0.5) * 20,
+      cough_count: Math.floor(1 + (Math.random() - 0.5) * 2),
+      activity_index: 70 + (Math.random() - 0.5) * 30,
     },
     ear_tag: {
-      behavior_index: isHighRisk ? 35 + (Math.random() - 0.5) * 30 : 75 + (Math.random() - 0.5) * 20,
-      rumination_minutes: isHighRisk ? 200 + (Math.random() - 0.5) * 160 : 450 + (Math.random() - 0.5) * 100,
+      behavior_index: 75 + (Math.random() - 0.5) * 20,
+      rumination_minutes: 450 + (Math.random() - 0.5) * 100,
     },
   };
 }
@@ -93,14 +127,14 @@ async function seed() {
       }
     }
 
-    // 4. Insert alerts for High-risk animals
-    const highRiskAnimals = animals.filter((a) => a.risk === 'High');
-    for (const animal of highRiskAnimals) {
+    // 4. Insert alerts for High and Medium risk animals
+    for (const animal of animals.filter((a) => a.risk === 'High' || a.risk === 'Medium')) {
       const animalId = animalMap[animal.tag_id].id;
+      const mlScore = animal.risk === 'High' ? (0.75 + Math.random() * 0.22).toFixed(4) : (0.45 + Math.random() * 0.2).toFixed(4);
       await pool.query(
-        `INSERT INTO alerts (animal_id, previous_risk, current_risk, acknowledged)
-         VALUES ($1, 'Low', 'High', false)`,
-        [animalId]
+        `INSERT INTO alerts (animal_id, previous_risk, current_risk, ml_score, acknowledged)
+         VALUES ($1, 'Low', $2, $3, false)`,
+        [animalId, animal.risk, mlScore]
       );
     }
 

@@ -52,17 +52,18 @@ const AppNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#1f2937',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: '#16a34a',
+        tabBarInactiveTintColor: '#64748b',
         tabBarLabelStyle: {
-          fontSize: 14,
-          fontWeight: '600',
+          fontSize: 13,
+          fontWeight: '700',
         },
         tabBarStyle: {
-          height: 60,
-          paddingVertical: 8,
+          height: 64,
+          paddingVertical: 6,
           borderTopWidth: 1,
-          borderTopColor: '#e5e7eb',
+          borderTopColor: '#e2e8f0',
+          backgroundColor: '#ffffff',
         },
       })}
     >

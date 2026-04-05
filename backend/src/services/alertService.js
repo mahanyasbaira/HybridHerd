@@ -32,9 +32,9 @@ async function checkAndCreateAlert(animalId, pool) {
 
     const mostRecentUnackRisk = unackResult.rows[0]?.current_risk;
 
-    // Only create alert if risk is Medium or High AND differs from most recent unacknowledged
+    // Only create alert if risk is High AND differs from most recent unacknowledged
     if (
-      (risk_level === 'Medium' || risk_level === 'High') &&
+      risk_level === 'High' &&
       (mostRecentUnackRisk === undefined || mostRecentUnackRisk !== risk_level)
     ) {
       const result = await pool.query(

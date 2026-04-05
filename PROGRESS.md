@@ -47,9 +47,28 @@ HybridHerd/
 
 ---
 
-## Phase 2 — ML Pipeline (pending)
-## Phase 3 — Alerting & Telehealth (pending)  
-## Phase 4 — Frontend (pending)
+## Phase 2 — ML Pipeline
+**Agent:** Data_ML_Engineer  
+- MmCows dataset loader (CBT, THI, ankle activity CSVs)
+- Feature engineering: 15 features, 24h/72h rolling windows, 1,800 synthetic training samples
+- HistGradientBoostingClassifier → `weights/brd_model.joblib`
+- FastAPI endpoints: `/health`, `/predict`, `/predict-from-db`, `/retrain`
+
+## Phase 3 — Alerting & Telehealth
+**Agent:** Backend_Dev  
+- `alertService.js`: risk-transition alerting (only fires on change)
+- `cronJob.js`: node-cron polls all animals every 5 min
+- Telehealth routes: send to vet, vet respond, payload fetch
+- Gemini AI vet briefings on telehealth submission
+
+## Phase 4 — Frontend
+**Agent:** Frontend_Dev  
+- Dashboard: herd list with risk filter, 30s auto-refresh
+- CowDetail: nose ring / collar / ear tag telemetry, Send to Vet, AI briefing display
+- Alerts: acknowledge flow, risk badges
+- Settings: account info, sign out, alert thresholds, app info
+- Auth: LoginScreen, AuthContext, AsyncStorage token persistence
+- Seed data: 8 cattle, 24h telemetry, 3 high-risk alerts, demo rancher account
 
 ---
 

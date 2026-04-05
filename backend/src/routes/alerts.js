@@ -16,12 +16,13 @@ router.get('/', authenticateToken, async (req, res) => {
         a.animal_id,
         a.previous_risk,
         a.current_risk,
+        a.current_risk AS risk,
         a.ml_score,
-        a.triggered_at,
+        a.triggered_at AS timestamp,
         a.acknowledged,
         a.acknowledged_at,
         an.tag_id,
-        an.name
+        an.name AS animal_name
       FROM alerts a
       JOIN animals an ON a.animal_id = an.id
       ${whereClause}

@@ -7,6 +7,9 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,13 +22,11 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Please enter both email and password');
+      setError('Please enter both email and password.');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
       await login(email, password);
     } catch (err) {
@@ -37,58 +38,80 @@ const LoginScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.logoSection}>
-          <Text style={styles.logo}>🐄</Text>
-          <Text style={styles.title}>HybridHerd</Text>
-          <Text style={styles.subtitle}>BRD Early Detection</Text>
-        </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kav}
+      >
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-        <View style={styles.formSection}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-            editable={!loading}
-          />
+          <View style={styles.heroBand}>
+            <Text style={styles.heroIcon}>🐄</Text>
+            <Text style={styles.heroTitle}>HybridHerd</Text>
+            <Text style={styles.heroSubtitle}>BRD Early Detection System</Text>
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            editable={!loading}
-          />
+          <View style={styles.formCard}>
+            <Text style={styles.formHeading}>Sign In</Text>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              pressed && { opacity: 0.8 },
-              loading && { opacity: 0.6 },
-            ]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
-            )}
-          </Pressable>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Email Address</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="rancher@example.com"
+                placeholderTextColor="#94a3b8"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
+                editable={!loading}
+              />
+            </View>
 
-          {error && <Text style={styles.errorText}>{error}</Text>}
-        </View>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor="#94a3b8"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+                editable={!loading}
+              />
+            </View>
 
-        <View style={styles.footerSection}>
-          <Text style={styles.hintText}>Demo Credentials</Text>
-          <Text style={styles.credentialText}>rancher@hybridherd.com</Text>
-          <Text style={styles.credentialText}>HybridHerd2024!</Text>
-        </View>
-      </View>
+            {error ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.button,
+                pressed && { opacity: 0.85 },
+                loading && styles.buttonDisabled,
+              ]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : (
+                <Text style={styles.buttonText}>Sign In</Text>
+              )}
+            </Pressable>
+          </View>
+
+          <View style={styles.demoCard}>
+            <Text style={styles.demoLabel}>Demo Credentials</Text>
+            <Text style={styles.demoCredential}>rancher@hybridherd.com</Text>
+            <Text style={styles.demoCredential}>HybridHerd2024!</Text>
+          </View>
+
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -96,80 +119,126 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#0f172a',
   },
-  content: {
+  kav: {
     flex: 1,
+  },
+  scroll: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 40,
   },
-  logoSection: {
+  heroBand: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 36,
   },
-  logo: {
-    fontSize: 80,
+  heroIcon: {
+    fontSize: 72,
+    marginBottom: 12,
+  },
+  heroTitle: {
+    fontSize: 40,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: -1,
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    fontSize: 17,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  formHeading: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 24,
+  },
+  fieldGroup: {
     marginBottom: 16,
   },
-  title: {
-    fontSize: 32,
+  fieldLabel: {
+    fontSize: 15,
     fontWeight: '700',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  formSection: {
-    width: '100%',
-    marginBottom: 32,
-  },
-  input: {
-    width: '100%',
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginBottom: 12,
-    color: '#000000',
-  },
-  button: {
-    width: '100%',
-    height: 48,
-    backgroundColor: '#16a34a',
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  errorText: {
-    color: '#dc2626',
-    fontSize: 14,
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  footerSection: {
-    alignItems: 'center',
-  },
-  hintText: {
-    fontSize: 12,
-    color: '#9ca3af',
-    textTransform: 'uppercase',
+    color: '#374151',
     marginBottom: 8,
   },
-  credentialText: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 4,
-    fontFamily: 'Courier',
+  input: {
+    height: 54,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 17,
+    color: '#0f172a',
+    backgroundColor: '#f8fafc',
+  },
+  errorBox: {
+    backgroundColor: '#fee2e2',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#7f1d1d',
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  button: {
+    height: 56,
+    backgroundColor: '#16a34a',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.3,
+  },
+  demoCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+  },
+  demoLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  demoCredential: {
+    fontSize: 16,
+    color: '#94a3b8',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginBottom: 2,
   },
 });
 

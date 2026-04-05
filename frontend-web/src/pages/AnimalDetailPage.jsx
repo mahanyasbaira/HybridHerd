@@ -1,0 +1,504 @@
+import { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Flag, Trash2, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { getAnimalById, toggleAnimalFlag, deleteAnimal } from '../api/animals';
+import { getNotes, createNote, updateNote, deleteNote, sendToVet } from '../api/notes';
+import { GlassCard } from '../components/ui/GlassCard';
+import { RiskBadge } from '../components/ui/RiskBadge';
+import { toast } from 'sonner';
+
+export function AnimalDetailPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const [activeTab, setActiveTab] = useState('temperature');
+  const [showVetModal, setShowVetModal] = useState(false);
+  const [vetNotes, setVetNotes] = useState('');
+  const [vetLoading, setVetLoading] = useState(false);
+  const [newNote, setNewNote] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingNoteText, setEditingNoteText] = useState('');
+  const [showBehaviorInfo, setShowBehaviorInfo] = useState(false);
+
+  const { data: animal, isLoading: animalLoading, error: animalError } = useQuery({
+    queryKey: ['animal', id],
+    queryFn: () => getAnimalById(id),
+  });
+
+  const { data: notesData } = useQuery({
+    queryKey: ['notes', id],
+    queryFn: () => getNotes(id),
+  });
+
+  const toggleFlagMutation = useMutation({
+    mutationFn: () => toggleAnimalFlag(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['animal', id]);
+      toast.success('Flag toggled');
+    },
+  });
+
+  const deleteAnimalMutation = useMutation({
+    mutationFn: () => deleteAnimal(id),
+    onSuccess: () => {
+      toast.success('Animal deleted');
+      navigate('/dashboard');
+    },
+  });
+
+  const createNoteMutation = useMutation({
+    mutationFn: (note) => createNote(id, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notes', id]);
+      setNewNote('');
+      toast.success('Note added');
+    },
+  });
+
+  const updateNoteMutation = useMutation({
+    mutationFn: ({ noteId, text }) => updateNote(noteId, text),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notes', id]);
+      setEditingNoteId(null);
+      toast.success('Note updated');
+    },
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId) => deleteNote(noteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notes', id]);
+      toast.success('Note deleted');
+    },
+  });
+
+  const sendToVetMutation = useMutation({
+    mutationFn: () => sendToVet(animal?.data?.latest_alert_id, vetNotes),
+    onSuccess: () => {
+      toast.success('Sent to veterinarian');
+      setShowVetModal(false);
+      setVetNotes('');
+    },
+  });
+
+  const animalData = animal?.data;
+  const notes = notesData?.data || [];
+
+  if (animalError) {
+    return (
+      <div className="p-8">
+        <Link to="/dashboard" className="flex items-center gap-2 text-teal-400 mb-6 hover:text-teal-300">
+          <ArrowLeft size={20} />
+          Back to Dashboard
+        </Link>
+        <GlassCard className="p-6 border-red-500/50">
+          <p className="text-red-300">Error loading animal</p>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return 'Unknown';
+    const birth = new Date(birthDate);
+    const today = new Date();
+    const age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      return age - 1 + ' years';
+    }
+    return age + ' years';
+  };
+
+  const chartData = [];
+  if (animalData?.telemetry_24h) {
+    const noseRing = animalData.telemetry_24h.nose_ring || [];
+    noseRing.forEach((reading, idx) => {
+      chartData[idx] = chartData[idx] || {};
+      chartData[idx].time = new Date(reading.timestamp).toLocaleTimeString();
+      chartData[idx].temperature = reading.temperature_c;
+      chartData[idx].respiratory_rate = reading.respiratory_rate;
+    });
+
+    const earTag = animalData.telemetry_24h.ear_tag || [];
+    earTag.forEach((reading, idx) => {
+      chartData[idx] = chartData[idx] || {};
+      chartData[idx].time = new Date(reading.timestamp).toLocaleTimeString();
+      chartData[idx].behavior_index = reading.behavior_index;
+    });
+  }
+
+  const handleDeleteAnimal = () => {
+    if (window.confirm('Are you sure you want to delete this animal? This cannot be undone.')) {
+      deleteAnimalMutation.mutate();
+    }
+  };
+
+  return (
+    <div className="p-8 space-y-8">
+      {/* Back Button */}
+      <Link to="/dashboard" className="inline-flex items-center gap-2 text-teal-400 hover:text-teal-300">
+        <ArrowLeft size={20} />
+        Back to Dashboard
+      </Link>
+
+      {animalLoading ? (
+        <div className="space-y-6">
+          <div className="h-32 bg-slate-200/60 dark:bg-white/5 rounded-2xl animate-pulse" />
+          <div className="h-96 bg-slate-200/60 dark:bg-white/5 rounded-2xl animate-pulse" />
+        </div>
+      ) : (
+        <>
+          {/* Hero Section */}
+          <GlassCard className="p-8">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-white mb-2">
+                  {animalData?.name || 'Unknown'}
+                </h1>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="text-slate-500 dark:text-slate-400">Tag: {animalData?.tag_id}</span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {animalData?.breed || 'Unknown breed'} • {calculateAge(animalData?.birth_date)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => toggleFlagMutation.mutate()}
+                  className="p-3 rounded-lg border border-amber-500/50 text-amber-400 hover:bg-amber-500/10 transition-colors"
+                >
+                  <Flag size={20} fill={animalData?.is_manually_flagged ? 'currentColor' : 'none'} />
+                </button>
+                <button
+                  onClick={handleDeleteAnimal}
+                  className="p-3 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <Trash2 size={20} />
+                </button>
+              </div>
+            </div>
+
+            <RiskBadge risk={animalData?.current_risk} flagged={animalData?.is_manually_flagged} />
+          </GlassCard>
+
+          {/* High Risk Alert Banner */}
+          {animalData?.current_risk === 'High' && animalData?.latest_alert && (
+            <GlassCard className="p-6 border-red-500/50 bg-red-50 dark:bg-red-500/10">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-red-600 dark:text-red-300 mb-2">Active High Risk Alert</h3>
+                  <p className="text-sm text-red-700 dark:text-red-200 mb-3">
+                    ML Score: {animalData.latest_alert.ml_score != null ? (parseFloat(animalData.latest_alert.ml_score) * 100).toFixed(1) : '—'}%
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {new Date(animalData.latest_alert.timestamp).toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowVetModal(true)}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                  <Send size={16} />
+                  Send to Vet
+                </button>
+              </div>
+            </GlassCard>
+          )}
+
+          {/* Vet Modal */}
+          {showVetModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <GlassCard className="max-w-md w-full p-6">
+                <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-4">Send to Veterinarian</h3>
+                <textarea
+                  value={vetNotes}
+                  onChange={(e) => setVetNotes(e.target.value)}
+                  placeholder="Additional notes for the vet..."
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm mb-4 focus:border-teal-500 outline-none"
+                  rows={4}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowVetModal(false)}
+                    className="flex-1 px-4 py-2 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white rounded-lg hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => sendToVetMutation.mutate()}
+                    disabled={vetLoading}
+                    className="flex-1 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50"
+                  >
+                    Send
+                  </button>
+                </div>
+              </GlassCard>
+            </div>
+          )}
+
+          {/* Sensor Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Nose Ring */}
+            <GlassCard className="p-6 border-l-4 border-l-blue-500">
+              <h3 className="text-lg font-serif font-bold text-blue-500 dark:text-blue-300 mb-4">Nose Ring</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Temperature</p>
+                  <p className={`text-2xl font-bold ${parseFloat(animalData?.nose_ring?.temperature_c) > 39.5 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                    {animalData?.nose_ring?.temperature_c != null ? parseFloat(animalData.nose_ring.temperature_c).toFixed(1) : '—'}°C
+                  </p>
+                  {parseFloat(animalData?.nose_ring?.temperature_c) > 39.5 && (
+                    <p className="text-xs text-red-600 dark:text-red-300 mt-1">⚠️ Above threshold (39.5°C)</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Respiratory Rate</p>
+                  <p className={`text-2xl font-bold ${parseFloat(animalData?.nose_ring?.respiratory_rate) > 40 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                    {animalData?.nose_ring?.respiratory_rate != null ? Math.round(parseFloat(animalData.nose_ring.respiratory_rate)) : '—'} br/min
+                  </p>
+                  {parseFloat(animalData?.nose_ring?.respiratory_rate) > 40 && (
+                    <p className="text-xs text-red-600 dark:text-red-300 mt-1">⚠️ Above threshold (40 br/min)</p>
+                  )}
+                </div>
+              </div>
+            </GlassCard>
+
+            {/* Collar */}
+            <GlassCard className="p-6 border-l-4 border-l-green-500">
+              <h3 className="text-lg font-serif font-bold text-green-600 dark:text-green-300 mb-4">Collar</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Chew Frequency</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {animalData?.collar?.chew_frequency || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Cough Count</p>
+                  <p className={`text-2xl font-bold ${animalData?.collar?.cough_count > 5 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+                    {animalData?.collar?.cough_count || '0'}
+                  </p>
+                </div>
+              </div>
+            </GlassCard>
+
+            {/* Ear Tag */}
+            <GlassCard className="p-6 border-l-4 border-l-teal-500">
+              <h3 className="text-lg font-serif font-bold text-teal-600 dark:text-teal-300 mb-4">Ear Tag</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Behavior Index</p>
+                  <div className="flex items-end gap-3">
+                    <p className={`text-3xl font-bold ${parseFloat(animalData?.ear_tag?.behavior_index) < 50 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      {animalData?.ear_tag?.behavior_index != null ? (parseFloat(animalData.ear_tag.behavior_index) / 10).toFixed(1) : 'N/A'}
+                    </p>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">/ 10</span>
+                  </div>
+                  <div className="w-full bg-slate-200/60 dark:bg-white/10 rounded-full h-2 mt-3 overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${parseFloat(animalData?.ear_tag?.behavior_index) < 50 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                      style={{
+                        width: `${parseFloat(animalData?.ear_tag?.behavior_index) || 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+          </div>
+
+          {/* Telemetry Chart */}
+          {chartData.length > 0 && (
+            <GlassCard className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white mb-4">24-Hour Telemetry</h3>
+                  <div className="flex gap-2 mb-4">
+                    {['temperature', 'respiratory_rate', 'behavior_index'].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`
+                          px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                          ${activeTab === tab
+                            ? 'bg-teal-500 text-white'
+                            : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                          }
+                        `}
+                      >
+                        {tab === 'temperature' && 'Temperature'}
+                        {tab === 'respiratory_rate' && 'Respiratory Rate'}
+                        {tab === 'behavior_index' && 'Behavior Index'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.2)" />
+                    <XAxis dataKey="time" stroke="rgba(100,116,139,0.4)" />
+                    <YAxis stroke="rgba(100,116,139,0.4)" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255,255,255,0.95)',
+                        border: '1px solid rgba(100,116,139,0.2)',
+                        borderRadius: '8px',
+                        color: '#000',
+                      }}
+                      labelStyle={{ color: '#000' }}
+                    />
+                    {activeTab === 'temperature' && (
+                      <Line
+                        type="monotone"
+                        dataKey="temperature"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    )}
+                    {activeTab === 'respiratory_rate' && (
+                      <Line
+                        type="monotone"
+                        dataKey="respiratory_rate"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    )}
+                    {activeTab === 'behavior_index' && (
+                      <Line
+                        type="monotone"
+                        dataKey="behavior_index"
+                        stroke="#14b8a6"
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </GlassCard>
+          )}
+
+          {/* Behavior Index Explainer */}
+          <GlassCard className="p-6">
+            <button
+              onClick={() => setShowBehaviorInfo(!showBehaviorInfo)}
+              className="flex items-center justify-between w-full"
+            >
+              <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white">About Behavior Index</h3>
+              {showBehaviorInfo ? <ChevronUp className="text-slate-600 dark:text-slate-300" /> : <ChevronDown className="text-slate-600 dark:text-slate-300" />}
+            </button>
+            {showBehaviorInfo && (
+              <p className="text-slate-600 dark:text-slate-300 text-sm mt-4">
+                Behavior index is derived from lying-fraction data. Values below 0.5 may indicate reduced activity, though environmental and individual factors can cause variation independent of illness.
+              </p>
+            )}
+          </GlassCard>
+
+          {/* Notes Section */}
+          <GlassCard className="p-6">
+            <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white mb-4">Notes</h3>
+
+            <div className="space-y-4">
+              <div>
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a note..."
+                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg p-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:border-teal-500 outline-none"
+                  rows={3}
+                />
+                <button
+                  onClick={() => createNoteMutation.mutate(newNote)}
+                  disabled={!newNote.trim()}
+                  className="mt-2 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50 text-sm font-medium"
+                >
+                  Add Note
+                </button>
+              </div>
+
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {notes.length === 0 ? (
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">No notes yet</p>
+                ) : (
+                  notes.map((note) => (
+                    <div key={note.id} className="bg-slate-100 dark:bg-white/5 rounded-lg p-4 border border-slate-200 dark:border-white/10">
+                      {editingNoteId === note.id ? (
+                        <div>
+                          <textarea
+                            value={editingNoteText}
+                            onChange={(e) => setEditingNoteText(e.target.value)}
+                            className="w-full bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded p-2 text-slate-900 dark:text-white text-sm mb-2"
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => updateNoteMutation.mutate({ noteId: note.id, text: editingNoteText })}
+                              className="px-3 py-1 bg-green-600 dark:bg-green-500 text-white rounded text-xs"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingNoteId(null)}
+                              className="px-3 py-1 bg-slate-400 dark:bg-slate-500 text-white rounded text-xs"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-slate-900 dark:text-white text-sm mb-2">{note.note}</p>
+                          <div className="flex justify-between items-center">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {new Date(note.created_at).toLocaleDateString()}
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingNoteId(note.id);
+                                  setEditingNoteText(note.note);
+                                }}
+                                className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteNoteMutation.mutate(note.id)}
+                                className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </GlassCard>
+        </>
+      )}
+    </div>
+  );
+}

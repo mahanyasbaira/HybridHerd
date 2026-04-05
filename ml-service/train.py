@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Training script for BRD classifier."""
+"""Training script for BRD classifier.
+
+Attempts to train on real MmCows dataset (CBT + ankle activity).
+Falls back to synthetic data if the dataset is not available.
+"""
 
 import pathlib
 import logging
@@ -19,7 +23,19 @@ if __name__ == "__main__":
     pathlib.Path("weights").mkdir(exist_ok=True)
 
     fe = FeatureEngineer()
-    X, y = fe.build_features_from_simulated()
+
+    # Try real dataset first, fall back to synthetic
+    try:
+        X, y = fe.build_features_from_mmcows()
+        # Supplement with synthetic to ensure class balance and coverage
+        X_synth, y_synth = fe.build_features_from_simulated(n_animals=10, seed=99)
+        import pandas as pd
+        X = pd.concat([X, X_synth], ignore_index=True)
+        y = pd.concat([y, y_synth], ignore_index=True)
+        logger.info(f"Combined training set: {len(X)} samples (real + synthetic supplement)")
+    except Exception as e:
+        logger.warning(f"Could not load real data ({e}), using synthetic only")
+        X, y = fe.build_features_from_simulated()
 
     clf = BRDClassifier()
     clf.train(X, y)
