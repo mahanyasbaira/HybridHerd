@@ -10,6 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Label,
 } from 'recharts';
 import { getAnimalById, toggleAnimalFlag, deleteAnimal } from '../api/animals';
 import { getNotes, createNote, updateNote, deleteNote } from '../api/notes';
@@ -111,21 +112,27 @@ export function AnimalDetailPage() {
     return age + ' years';
   };
 
+  const toF = (c) => c != null ? (parseFloat(c) * 9 / 5 + 32) : null;
+
   const chartData = [];
   if (animalData?.telemetry_24h) {
-    const noseRing = animalData.telemetry_24h.nose_ring || [];
+    const noseRing = [...(animalData.telemetry_24h.nose_ring || [])].reverse();
     noseRing.forEach((reading, idx) => {
       chartData[idx] = chartData[idx] || {};
-      chartData[idx].time = new Date(reading.timestamp).toLocaleTimeString();
-      chartData[idx].temperature = reading.temperature_c;
-      chartData[idx].respiratory_rate = reading.respiratory_rate;
+      const d = new Date(reading.recorded_at);
+      chartData[idx].time = isNaN(d) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      chartData[idx].temperature = toF(reading.temperature_c);
+      chartData[idx].respiratory_rate = parseFloat(reading.respiratory_rate) || null;
     });
 
-    const earTag = animalData.telemetry_24h.ear_tag || [];
+    const earTag = [...(animalData.telemetry_24h.ear_tag || [])].reverse();
     earTag.forEach((reading, idx) => {
       chartData[idx] = chartData[idx] || {};
-      chartData[idx].time = new Date(reading.timestamp).toLocaleTimeString();
-      chartData[idx].behavior_index = reading.behavior_index;
+      if (!chartData[idx].time) {
+        const d = new Date(reading.recorded_at);
+        chartData[idx].time = isNaN(d) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      chartData[idx].behavior_index = parseFloat(reading.behavior_index) || null;
     });
   }
 
@@ -193,7 +200,7 @@ export function AnimalDetailPage() {
                     ML Score: {animalData.latest_alert.ml_score != null ? (parseFloat(animalData.latest_alert.ml_score) * 100).toFixed(1) : '—'}%
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {new Date(animalData.latest_alert.timestamp).toLocaleString()}
+                    {new Date(animalData.latest_alert.triggered_at).toLocaleString()}
                   </p>
                 </div>
                 <button
@@ -215,76 +222,72 @@ export function AnimalDetailPage() {
             />
           )}
 
-          {/* Sensor Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Nose Ring */}
-            <GlassCard className="p-6 border-l-4 border-l-blue-500">
-              <h3 className="text-lg font-serif font-bold text-blue-500 dark:text-blue-300 mb-4">Nose Ring</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Temperature</p>
-                  <p className={`text-2xl font-bold ${parseFloat(animalData?.nose_ring?.temperature_c) > 39.5 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
-                    {animalData?.nose_ring?.temperature_c != null ? parseFloat(animalData.nose_ring.temperature_c).toFixed(1) : '—'}°C
-                  </p>
-                  {parseFloat(animalData?.nose_ring?.temperature_c) > 39.5 && (
-                    <p className="text-xs text-red-600 dark:text-red-300 mt-1">⚠️ Above threshold (39.5°C)</p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Respiratory Rate</p>
-                  <p className={`text-2xl font-bold ${parseFloat(animalData?.nose_ring?.respiratory_rate) > 40 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
-                    {animalData?.nose_ring?.respiratory_rate != null ? Math.round(parseFloat(animalData.nose_ring.respiratory_rate)) : '—'} br/min
-                  </p>
-                  {parseFloat(animalData?.nose_ring?.respiratory_rate) > 40 && (
-                    <p className="text-xs text-red-600 dark:text-red-300 mt-1">⚠️ Above threshold (40 br/min)</p>
-                  )}
-                </div>
+          {/* Sensor Readings — all sensors under Nose Ring heading */}
+          <GlassCard className="p-6">
+            <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white mb-5">Nose Ring</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+              {/* Temperature */}
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Temperature</p>
+                <p className={`text-2xl font-bold ${toF(animalData?.nose_ring?.temperature_c) > 103.1 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                  {animalData?.nose_ring?.temperature_c != null ? toF(animalData.nose_ring.temperature_c).toFixed(1) : '—'}°F
+                </p>
+                {toF(animalData?.nose_ring?.temperature_c) > 103.1 && (
+                  <p className="text-xs text-red-600 dark:text-red-300">⚠️ Above 103.1°F</p>
+                )}
               </div>
-            </GlassCard>
 
-            {/* Collar */}
-            <GlassCard className="p-6 border-l-4 border-l-green-500">
-              <h3 className="text-lg font-serif font-bold text-green-600 dark:text-green-300 mb-4">Collar</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Chew Frequency</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {animalData?.collar?.chew_frequency || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Cough Count</p>
-                  <p className={`text-2xl font-bold ${animalData?.collar?.cough_count > 5 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
-                    {animalData?.collar?.cough_count || '0'}
-                  </p>
-                </div>
+              {/* Respiratory Rate */}
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Respiratory Rate</p>
+                <p className={`text-2xl font-bold ${parseFloat(animalData?.nose_ring?.respiratory_rate) > 40 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                  {animalData?.nose_ring?.respiratory_rate != null ? Math.round(parseFloat(animalData.nose_ring.respiratory_rate)) : '—'}
+                </p>
+                <p className="text-xs text-slate-400">breaths/minute</p>
+                {parseFloat(animalData?.nose_ring?.respiratory_rate) > 40 && (
+                  <p className="text-xs text-red-600 dark:text-red-300">⚠️ Above 40</p>
+                )}
               </div>
-            </GlassCard>
 
-            {/* Ear Tag */}
-            <GlassCard className="p-6 border-l-4 border-l-teal-500">
-              <h3 className="text-lg font-serif font-bold text-teal-600 dark:text-teal-300 mb-4">Ear Tag</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Behavior Index</p>
-                  <div className="flex items-end gap-3">
-                    <p className={`text-3xl font-bold ${parseFloat(animalData?.ear_tag?.behavior_index) < 50 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                      {animalData?.ear_tag?.behavior_index != null ? (parseFloat(animalData.ear_tag.behavior_index) / 10).toFixed(1) : 'N/A'}
-                    </p>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">/ 10</span>
-                  </div>
-                  <div className="w-full bg-slate-200/60 dark:bg-white/10 rounded-full h-2 mt-3 overflow-hidden">
-                    <div
-                      className={`h-full transition-all ${parseFloat(animalData?.ear_tag?.behavior_index) < 50 ? 'bg-amber-400' : 'bg-emerald-400'}`}
-                      style={{
-                        width: `${parseFloat(animalData?.ear_tag?.behavior_index) || 0}%`,
-                      }}
-                    />
-                  </div>
+              {/* Chew Frequency */}
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Chew Frequency</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {animalData?.collar?.chew_frequency != null ? parseFloat(animalData.collar.chew_frequency).toFixed(1) : '—'}
+                </p>
+                <p className="text-xs text-slate-400">chews/min</p>
+              </div>
+
+              {/* Cough Count */}
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Cough Count</p>
+                <p className={`text-2xl font-bold ${animalData?.collar?.cough_count > 5 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+                  {animalData?.collar?.cough_count ?? '0'}
+                </p>
+                <p className="text-xs text-slate-400">last reading</p>
+                {animalData?.collar?.cough_count > 5 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-300">⚠️ Elevated</p>
+                )}
+              </div>
+
+              {/* Behavior Index */}
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Behavior Index</p>
+                <div className="flex items-end gap-1">
+                  <p className={`text-2xl font-bold ${parseFloat(animalData?.ear_tag?.behavior_index) < 50 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {animalData?.ear_tag?.behavior_index != null ? (parseFloat(animalData.ear_tag.behavior_index) / 10).toFixed(1) : '—'}
+                  </p>
+                  <span className="text-xs text-slate-400 mb-1">/ 10</span>
+                </div>
+                <div className="w-full bg-slate-200/60 dark:bg-white/10 rounded-full h-1.5 mt-1 overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${parseFloat(animalData?.ear_tag?.behavior_index) < 50 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                    style={{ width: `${parseFloat(animalData?.ear_tag?.behavior_index) || 0}%` }}
+                  />
                 </div>
               </div>
-            </GlassCard>
-          </div>
+            </div>
+          </GlassCard>
 
           {/* Telemetry Chart */}
           {chartData.length > 0 && (
@@ -314,48 +317,64 @@ export function AnimalDetailPage() {
                 </div>
 
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
+                  <LineChart data={chartData} margin={{ left: 16, right: 8, bottom: 24, top: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.2)" />
-                    <XAxis dataKey="time" stroke="rgba(100,116,139,0.4)" />
-                    <YAxis stroke="rgba(100,116,139,0.4)" />
+                    <XAxis
+                      dataKey="time"
+                      stroke="rgba(100,116,139,0.4)"
+                      tick={{ fontSize: 11 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      stroke="rgba(100,116,139,0.4)"
+                      tick={{ fontSize: 11 }}
+                      width={56}
+                      domain={
+                        activeTab === 'temperature'
+                          ? [97, 107]
+                          : activeTab === 'respiratory_rate'
+                          ? [20, 70]
+                          : [0, 100]
+                      }
+                    >
+                      <Label
+                        value={
+                          activeTab === 'temperature'
+                            ? '°F'
+                            : activeTab === 'respiratory_rate'
+                            ? 'breaths/min'
+                            : 'index (0–100)'
+                        }
+                        angle={-90}
+                        position="insideLeft"
+                        offset={-4}
+                        style={{ fontSize: 11, fill: 'rgba(100,116,139,0.7)' }}
+                      />
+                    </YAxis>
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'rgba(255,255,255,0.95)',
                         border: '1px solid rgba(100,116,139,0.2)',
                         borderRadius: '8px',
                         color: '#000',
+                        fontSize: 12,
                       }}
                       labelStyle={{ color: '#000' }}
+                      formatter={(value, name) => {
+                        if (name === 'temperature') return [`${value?.toFixed(1)}°F`, 'Temperature'];
+                        if (name === 'respiratory_rate') return [`${Math.round(value)} breaths/min`, 'Respiratory Rate'];
+                        if (name === 'behavior_index') return [value?.toFixed(1), 'Behavior Index'];
+                        return [value, name];
+                      }}
                     />
                     {activeTab === 'temperature' && (
-                      <Line
-                        type="monotone"
-                        dataKey="temperature"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
+                      <Line type="monotone" dataKey="temperature" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} />
                     )}
                     {activeTab === 'respiratory_rate' && (
-                      <Line
-                        type="monotone"
-                        dataKey="respiratory_rate"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
+                      <Line type="monotone" dataKey="respiratory_rate" stroke="#10b981" strokeWidth={2} dot={false} isAnimationActive={false} />
                     )}
                     {activeTab === 'behavior_index' && (
-                      <Line
-                        type="monotone"
-                        dataKey="behavior_index"
-                        stroke="#14b8a6"
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
+                      <Line type="monotone" dataKey="behavior_index" stroke="#14b8a6" strokeWidth={2} dot={false} isAnimationActive={false} />
                     )}
                   </LineChart>
                 </ResponsiveContainer>
