@@ -31,20 +31,20 @@ router.post('/', auth, async (req, res) => {
             al.current_risk, al.ml_score
      FROM animals a
      LEFT JOIN LATERAL (
-       SELECT temperature_c, respiratory_rate FROM nose_ring_telemetry
-       WHERE animal_id = a.id ORDER BY timestamp DESC LIMIT 1
+       SELECT temperature_c, respiratory_rate FROM nose_ring_readings
+       WHERE animal_id = a.id ORDER BY recorded_at DESC LIMIT 1
      ) nr ON true
      LEFT JOIN LATERAL (
-       SELECT behavior_index FROM ear_tag_telemetry
-       WHERE animal_id = a.id ORDER BY timestamp DESC LIMIT 1
+       SELECT behavior_index FROM ear_tag_readings
+       WHERE animal_id = a.id ORDER BY recorded_at DESC LIMIT 1
      ) et ON true
      LEFT JOIN LATERAL (
-       SELECT chew_frequency, cough_count FROM collar_telemetry
-       WHERE animal_id = a.id ORDER BY timestamp DESC LIMIT 1
+       SELECT chew_frequency, cough_count FROM collar_readings
+       WHERE animal_id = a.id ORDER BY recorded_at DESC LIMIT 1
      ) c ON true
      LEFT JOIN LATERAL (
        SELECT current_risk, ml_score FROM alerts
-       WHERE animal_id = a.id ORDER BY timestamp DESC LIMIT 1
+       WHERE animal_id = a.id ORDER BY triggered_at DESC LIMIT 1
      ) al ON true
      WHERE a.id = $1`,
     [animal_id]
