@@ -16,7 +16,14 @@ const cors = require('cors');
 const app = express();
 
 // Middleware
-app.use(cors({ origin: ['http://localhost:8081', 'http://localhost:19006', 'http://localhost:5173', 'http://localhost:3000'] }));
+const allowedOrigins = [
+  'http://localhost:8081',
+  'http://localhost:19006',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+];
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 // REST Routes
