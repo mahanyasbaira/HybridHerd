@@ -42,13 +42,7 @@ PORT=8000
 - `MODEL_PATH`: Path where trained model is saved
 - `PORT`: FastAPI server port
 
-## Training
 
-### Standalone Training Script
-
-```bash
-python3 train.py
-```
 
 Generates synthetic data and trains model to `weights/brd_model.joblib`.
 
