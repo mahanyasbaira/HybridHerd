@@ -63,6 +63,20 @@ Bovine Respiratory Disease (BRD) is the **#1 economic and welfare threat** to ca
 
 ---
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Herd Dashboard — Real-Time Risk Overview
+<img src="docs/screenshots/dashboard.png" width="700" alt="HybridHerd dashboard showing herd-wide risk cards with live telemetry for Scout, Bella, Clara, Molly, Rosie, and Daisy"/>
+
+### Animal Detail — High-Risk Alert with 24-Hour Telemetry
+<img src="docs/screenshots/animal-detail.png" width="700" alt="Scout animal detail page showing active high-risk alert, ML score 86.4%, nose ring sensor readings, and 24-hour respiratory rate chart"/>
+
+</div>
+
+---
+
 ## 🏗️ System Architecture
 
 ```
